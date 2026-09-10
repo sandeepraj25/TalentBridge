@@ -1,7 +1,19 @@
 import jobWoman from "./images/job-woman.png";
+import tcsLogo from "./images/tcs.webp";
+import infosysLogo from "./images/Infosys.webp";
+import accentureLogo from "./images/Accenture.png";
+import wiproLogo from "./images/Wipro.webp";
+import hcltechLogo from "./images/HCLTech.webp";
+import cognizantLogo from "./images/Cognizant.webp";
+import techMahindraLogo from "./images/tech-mahindra.webp";
+import deloitteLogo from "./images/Deloitte.png";
+import capgeminiLogo from "./images/capgemini.png";
+import ibmLogo from "./images/IBM.webp";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import hiringBanner from "./images/hiring-banner.png";
+
 import {
   Search,
   MapPin,
@@ -9,6 +21,7 @@ import {
   Coins,
   GitBranch,
   ArrowRight,
+  Check,
   Briefcase,
   Building2,
   Users,
@@ -16,6 +29,7 @@ import {
   Megaphone,
   Palette,
   HeartPulse,
+  ShieldCheck,
   MoreHorizontal,
 } from "lucide-react";
 import { api } from "@/lib/api";
@@ -93,7 +107,58 @@ export default function Home() {
     { label: "Companies hiring", value: stats.companies, icon: Building2 },
     { label: "Candidates", value: stats.candidates, icon: Users },
   ];
-
+  const topHiringCompanies = [
+    {
+      name: "TCS",
+      jobs: 124,
+      logo: tcsLogo,
+    },
+    {
+      name: "Infosys",
+      jobs: 98,
+      logo: infosysLogo,
+    },
+    {
+      name: "Accenture",
+      jobs: 76,
+      logo: accentureLogo,
+    },
+    {
+      name: "Wipro",
+      jobs: 64,
+      logo: wiproLogo,
+    },
+    {
+      name: "HCLTech",
+      jobs: 52,
+      logo: hcltechLogo,
+    },
+    {
+      name: "Deloitte",
+      jobs: 48,
+      logo: deloitteLogo,
+    },
+    {
+      name: "Cognizant",
+      jobs: 38,
+      logo: cognizantLogo,
+    },
+    {
+      name: "Tech Mahindra",
+      jobs: 41,
+      logo: techMahindraLogo,
+    },
+    {
+      name: "Capgemini",
+      jobs: 35,
+      logo: capgeminiLogo,
+    },
+    {
+      name: "IBM",
+      jobs: 32,
+      logo: ibmLogo,
+    },
+  ];
   return (
     <div>
       {/* Hero */}
@@ -260,6 +325,123 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Platform Stats */}
+      <section className="bg-white py-6 sm:py-8">
+        <div className="container-page">
+          <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm md:grid-cols-4">
+
+            <div className="flex items-center gap-3 border-b border-r border-slate-200 p-4 md:border-b-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                <Briefcase className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-ink">500+</p>
+                <p className="text-xs text-slate-500 sm:text-sm">
+                  Active Job Listings
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 border-b border-slate-200 p-4 md:border-b-0 md:border-r">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                <Building2 className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-ink">1,000+</p>
+                <p className="text-xs text-slate-500 sm:text-sm">
+                  Top Companies
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 border-r border-slate-200 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-ink">100K +</p>
+                <p className="text-xs text-slate-500 sm:text-sm">
+                  Job Seekers
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-ink">100%</p>
+                <p className="text-xs text-slate-500 sm:text-sm">
+                  Safe & Secure
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+      {/* Our Top Hiring Companies */}
+      <section className="bg-slate-50 py-12">
+        <div className="container-page">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Our Top Hiring Companies</h2>
+            </div>
+
+            <Link
+              to="/companies"
+              className="hidden items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700 sm:flex"
+            >
+              View All Companies
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="company-marquee-wrapper">
+            <div className="company-marquee">
+              {[...topHiringCompanies, ...topHiringCompanies].map(
+                (company, index) => (
+                  <div
+                    key={`${company.name}-${index}`}
+                    className="company-marquee-item"
+                  >
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5">                      <img
+                      src={company.logo}
+                      alt={`${company.name} logo`}
+                      className="h-full w-full object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">
+                        {company.name}
+                      </p>
+
+                      <p className="text-xs text-slate-500">
+                        {company.jobs} active jobs
+                      </p>
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 text-center sm:hidden">
+            <Link
+              to="/companies"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600"
+            >
+              View All Companies
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
       {/* Explore jobs by category */}
       <section className="container-page py-16">
         <div className="flex items-end justify-between">
@@ -338,36 +520,92 @@ export default function Home() {
         )}
       </section>
 
-      {/* Value props */}
-      <section className="bg-white py-16">
+      {/* Why Talent Hai */}
+      <section className="border-t border-slate-200 bg-white py-16 sm:py-20">
         <div className="container-page">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold text-ink">
-              Built for the way India hires
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Everything candidates and recruiters need in one place.
-            </p>
-          </div>
+          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
 
-          <div className="mt-10 grid gap-6 md:grid-cols-3">
-            {features.map((f) => (
-              <div key={f.title} className="card p-6">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-white">
-                  <f.icon className="h-5 w-5" />
+            {/* Left Content */}
+            <div>
+              <span className="text-sm font-semibold uppercase tracking-wider text-brand-600">
+                Why Talent Hai?
+              </span>
+
+              <h2 className="mt-3 max-w-lg text-3xl font-bold leading-tight sm:text-4xl">
+                Finding a job shouldn't feel like a full-time job.
+              </h2>
+
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">
+                Job search simple hona chahiye — search karo, compare karo,
+                apply karo, aur apni applications ka status ek hi jagah se track karo.
+              </p>
+
+              <div className="mt-7">
+                <a
+                  href="/jobs"
+                  className="btn-primary"
+                >
+                  Explore Jobs
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </div>
+            </div>
+
+            {/* Right Content */}
+            <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-slate-50">
+
+              <div className="flex gap-4 p-6">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
+                  <Check className="h-4 w-4" />
                 </div>
 
-                <h3 className="mt-4 text-lg font-semibold text-ink">
-                  {f.title}
-                </h3>
-
-                <p className="mt-2 text-sm text-slate-500">{f.body}</p>
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Search smarter
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    Find relevant jobs based on your skills, location and preferred role.
+                  </p>
+                </div>
               </div>
-            ))}
+
+              <div className="flex gap-4 p-6">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
+                  <Check className="h-4 w-4" />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Apply easily
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    Keep your profile ready and apply to opportunities without unnecessary steps.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 p-6">
+                <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-600">
+                  <Check className="h-4 w-4" />
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Track your journey
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    See your application progress and keep everything organized in one place.
+                  </p>
+                </div>
+              </div>
+
+            </div>
           </div>
+
+
+
         </div>
       </section>
-
       {/* Browse by industry */}
       <section className="container-page py-16">
         <h2 className="text-2xl font-bold text-ink">Browse by industry</h2>
@@ -391,27 +629,34 @@ export default function Home() {
 
       {/* Recruiter CTA */}
       <section className="container-page pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-brand-700 px-8 py-14 text-center text-white sm:px-16">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand-500/40 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-brand-800/60 blur-3xl" />
+        <div className="relative overflow-hidden rounded-3xl bg-brand-700 h-[330px] sm:h-[360px]">
 
-          <div className="relative mx-auto max-w-2xl">
-            <h2 className="font-display text-3xl font-semibold sm:text-4xl">
-              Hiring? Reach candidates faster.
-            </h2>
+          <img
+            src={hiringBanner}
+            alt=""
+            className="absolute inset-0 h-full w-full scale-[1.25] object-cover object-center"          />
 
-            <p className="mx-auto mt-3 max-w-lg text-brand-100">
-              Post jobs, unlock candidate profiles, and manage your pipeline —
-              with pricing that scales with you.
-            </p>
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center sm:px-16">
+            <div className="max-w-xl">
+              <h2 className="font-display text-3xl font-semibold text-white sm:text-4xl">
+                Hiring? Reach candidates faster.
+              </h2>
 
-            <Link
-              to="/register?role=recruiter"
-              className="btn mt-7 bg-white text-brand-700 hover:bg-brand-50"
-            >
-              Start hiring <ArrowRight className="h-4 w-4" />
-            </Link>
+              <p className="mx-auto mt-3 max-w-lg text-brand-100">
+                Post jobs, unlock candidate profiles, and manage your pipeline —
+                with pricing that scales with you.
+              </p>
+
+              <Link
+                to="/register?role=recruiter"
+                className="btn mt-7 bg-white text-brand-700 hover:bg-brand-50"
+              >
+                Start hiring
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
+
         </div>
       </section>
     </div>

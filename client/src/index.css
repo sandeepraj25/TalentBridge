@@ -46,3 +46,102 @@
   .badge { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium; }
   .link { @apply font-medium text-brand-600 underline-offset-4 hover:underline; }
 }
+/* Top Hiring Companies Marquee */
+
+.company-marquee-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.company-marquee-wrapper::before,
+.company-marquee-wrapper::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.company-marquee-wrapper::before {
+  left: 0;
+  background: linear-gradient(
+    to right,
+    rgb(248 250 252),
+    transparent
+  );
+}
+
+.company-marquee-wrapper::after {
+  right: 0;
+  background: linear-gradient(
+    to left,
+    rgb(248 250 252),
+    transparent
+  );
+}
+
+.company-marquee {
+  display: flex;
+  width: max-content;
+  gap: 16px;
+  animation: company-scroll-right 35s linear infinite;
+}
+
+.company-marquee-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 190px;
+  padding: 14px 18px;
+  border: 1px solid rgb(226 232 240);
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.company-marquee-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+@keyframes company-scroll-right {
+  from {
+    transform: translateX(-50%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+.company-marquee-wrapper:hover .company-marquee {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .company-marquee {
+    animation: none;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .company-marquee {
+    gap: 12px;
+    animation-duration: 25s;
+  }
+
+  .company-marquee-item {
+    min-width: 165px;
+    padding: 12px 14px;
+  }
+
+  .company-marquee-wrapper::before,
+  .company-marquee-wrapper::after {
+    width: 45px;
+  }
+}
