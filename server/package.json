@@ -1,0 +1,26 @@
+{
+  "name": "rojgaar-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Rojgaar job portal — Node.js + Express + MySQL API.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "migrate": "node db/migrate.mjs",
+    "seed": "node db/seed.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.3",
+    "zod": "^3.23.8"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
