@@ -13,12 +13,10 @@ import {
   Building2,
   Users,
   Monitor,
-  TrendingUp,
-  Landmark,
-  UserCog,
+  Megaphone,
   Palette,
   HeartPulse,
-  Layers,
+  MoreHorizontal,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { JobCard } from "@/components/JobCard";
@@ -28,12 +26,12 @@ import type { Job } from "@/lib/types";
 
 const CATEGORY_ICONS = {
   "IT & Software": Monitor,
-  "Sales & Marketing": TrendingUp,
-  "Finance & Accounting": Landmark,
-  "HR & Administration": UserCog,
+  "Sales & Marketing": Megaphone,
+  "Finance & Accounting": Coins,
+  "HR & Administration": Users,
   "Design & Creative": Palette,
   Healthcare: HeartPulse,
-  Other: Layers,
+  Other: MoreHorizontal,
 } as const;
 
 export default function Home() {
