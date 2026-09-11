@@ -31,6 +31,7 @@ export default function Settings() {
     <div>
       <PageHeader title="Settings" description="Configure platform-wide behaviour." />
       <SettingsForm initial={{ ...EMPTY, ...(data?.settings ?? {}) }} />
+      <PaymentGatewaySettings />
     </div>
   );
 }
@@ -116,6 +117,157 @@ function SettingsForm({ initial }: { initial: Settings }) {
           {save.isPending ? "Saving…" : "Save settings"}
         </button>
         {saved && <span className="text-sm font-medium text-emerald-600">Settings saved</span>}
+      </div>
+    </form>
+  );
+}
+
+/* ── Payment gateway settings ─────────────────────────────────────────────── */
+
+interface GatewayCredentials {
+  keyId?: string;
+  appId?: string;
+  secretKeyMasked: string;
+  secretKeyConfigured: boolean;
+  webhookSecretMasked: string;
+  webhookSecretConfigured: boolean;
+  env?: string;
+}
+
+interface GatewaySettingsResp {
+  settings: {
+    activeGateway: string;
+    razorpay: GatewayCredentials;
+    cashfree: GatewayCredentials;
+  };
+}
+
+function PaymentGatewaySettings() {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-payment-gateway"],
+    queryFn: () => api.get<GatewaySettingsResp>("/admin/payment-gateway"),
+  });
+
+  const [activeGateway, setActiveGateway] = useState("");
+  const [rzKeyId, setRzKeyId] = useState("");
+  const [rzSecret, setRzSecret] = useState("");
+  const [rzWebhook, setRzWebhook] = useState("");
+  const [cfAppId, setCfAppId] = useState("");
+  const [cfSecret, setCfSecret] = useState("");
+  const [cfWebhook, setCfWebhook] = useState("");
+  const [cfEnv, setCfEnv] = useState("sandbox");
+  const [loaded, setLoaded] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Populate form from fetched data
+  if (data?.settings && !loaded) {
+    const s = data.settings;
+    setActiveGateway(s.activeGateway || "");
+    setRzKeyId(s.razorpay.keyId || "");
+    setCfAppId(s.cashfree.appId || "");
+    setCfEnv(s.cashfree.env || "sandbox");
+    setLoaded(true);
+  }
+
+  const save = useMutation({
+    mutationFn: () =>
+      api.put("/admin/payment-gateway", {
+        activeGateway,
+        razorpay: {
+          keyId: rzKeyId,
+          ...(rzSecret ? { secretKey: rzSecret } : {}),
+          ...(rzWebhook ? { webhookSecret: rzWebhook } : {}),
+        },
+        cashfree: {
+          appId: cfAppId,
+          ...(cfSecret ? { secretKey: cfSecret } : {}),
+          ...(cfWebhook ? { webhookSecret: cfWebhook } : {}),
+          env: cfEnv,
+        },
+      }),
+    onSuccess: () => {
+      setSaved(true);
+      setRzSecret("");
+      setRzWebhook("");
+      setCfSecret("");
+      setCfWebhook("");
+      queryClient.invalidateQueries({ queryKey: ["admin-payment-gateway"] });
+      setTimeout(() => setSaved(false), 2500);
+    },
+    onError: (err) => alert(err instanceof ApiError ? err.message : "Could not save gateway settings"),
+  });
+
+  if (isLoading) return null;
+
+  const rz = data?.settings?.razorpay;
+  const cf = data?.settings?.cashfree;
+
+  return (
+    <form
+      onSubmit={(e) => { e.preventDefault(); save.mutate(); }}
+      className="card mt-6 max-w-2xl space-y-5 p-6"
+    >
+      <h3 className="text-lg font-semibold text-ink">Payment gateway</h3>
+
+      {/* Active gateway radio */}
+      <div className="space-y-2">
+        <p className="label">Active gateway</p>
+        <div className="flex gap-6">
+          {(["razorpay", "cashfree"] as const).map((gw) => (
+            <label key={gw} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="activeGateway"
+                value={gw}
+                checked={activeGateway === gw}
+                onChange={() => setActiveGateway(gw)}
+              />
+              <span className="capitalize">{gw}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Razorpay credentials */}
+      <div className="space-y-3 border-t border-slate-100 pt-4">
+        <p className="text-sm font-medium text-ink">Razorpay</p>
+        <Field label="Key ID">
+          <input className="input" value={rzKeyId} onChange={(e) => setRzKeyId(e.target.value)} placeholder="rzp_live_..." />
+        </Field>
+        <Field label="Secret key" hint={rz?.secretKeyConfigured ? `Configured (${rz.secretKeyMasked})` : "Not configured"}>
+          <input className="input" type="password" value={rzSecret} onChange={(e) => setRzSecret(e.target.value)} placeholder="Leave blank to keep current" />
+        </Field>
+        <Field label="Webhook secret" hint={rz?.webhookSecretConfigured ? `Configured (${rz.webhookSecretMasked})` : "Not configured"}>
+          <input className="input" type="password" value={rzWebhook} onChange={(e) => setRzWebhook(e.target.value)} placeholder="Leave blank to keep current" />
+        </Field>
+      </div>
+
+      {/* Cashfree credentials */}
+      <div className="space-y-3 border-t border-slate-100 pt-4">
+        <p className="text-sm font-medium text-ink">Cashfree</p>
+        <Field label="App ID">
+          <input className="input" value={cfAppId} onChange={(e) => setCfAppId(e.target.value)} placeholder="CF_APP_..." />
+        </Field>
+        <Field label="Secret key" hint={cf?.secretKeyConfigured ? `Configured (${cf.secretKeyMasked})` : "Not configured"}>
+          <input className="input" type="password" value={cfSecret} onChange={(e) => setCfSecret(e.target.value)} placeholder="Leave blank to keep current" />
+        </Field>
+        <Field label="Webhook secret" hint={cf?.webhookSecretConfigured ? `Configured (${cf.webhookSecretMasked})` : "Not configured"}>
+          <input className="input" type="password" value={cfWebhook} onChange={(e) => setCfWebhook(e.target.value)} placeholder="Leave blank to keep current" />
+        </Field>
+        <Field label="Environment">
+          <select className="input sm:w-40" value={cfEnv} onChange={(e) => setCfEnv(e.target.value)}>
+            <option value="sandbox">Sandbox</option>
+            <option value="production">Production</option>
+          </select>
+        </Field>
+      </div>
+
+      <div className="flex items-center gap-3 border-t border-slate-100 pt-4">
+        <button type="submit" disabled={save.isPending} className="btn-primary">
+          {save.isPending ? "Saving…" : "Save gateway settings"}
+        </button>
+        {saved && <span className="text-sm font-medium text-emerald-600">Gateway settings saved</span>}
       </div>
     </form>
   );

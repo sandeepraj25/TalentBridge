@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import { ZodError } from "zod";
 import { config } from "./config.js";
-import { pool, query, ensureJobCategoryColumn } from "./db.js";
+import { pool, query, ensureJobCategoryColumn, ensurePaymentSchema } from "./db.js";
 import { uuid, HttpError, asyncHandler } from "./util.js";
 import { authRequired } from "./auth.js";
 
@@ -13,6 +13,7 @@ import recruiterRoutes from "./routes/recruiter.js";
 import messageRoutes from "./routes/messages.js";
 import notificationRoutes from "./routes/notifications.js";
 import adminRoutes from "./routes/admin.js";
+import { paymentRouter, paymentWebhookRouter } from "./payments/routes.js";
 
 const app = express();
 
@@ -26,6 +27,9 @@ app.use(
     credentials: true,
   })
 );
+
+// Webhooks need the raw body for signature verification.
+app.use("/api/payments/webhooks", express.raw({ type: "application/json" }), paymentWebhookRouter);
 app.use(express.json({ limit: "1mb" }));
 
 // Health check
@@ -46,6 +50,7 @@ app.use("/api/recruiter", recruiterRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRouter);
 
 // Report abuse (any authenticated user)
 app.post(
@@ -78,7 +83,8 @@ app.use((err, _req, res, _next) => {
 });
 
 ensureJobCategoryColumn()
-  .catch((err) => console.warn("Could not ensure jobs.category column:", err.message))
+  .then(() => ensurePaymentSchema())
+  .catch((err) => console.warn("Could not ensure schema:", err.message))
   .finally(() => {
     app.listen(config.port, () => {
       console.log(`Rojgaar API listening on http://localhost:${config.port}`);

@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Briefcase, UserRound } from "lucide-react";
+import { Briefcase, UserRound } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
-import { Field, Logo } from "@/components/ui";
+import { Field } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/types";
 
+// Path Alias (@/ points to src/)
+import logoImg from "@/pages/public/images/logo.png";
+import registerImg from "../public/images/registerimage.png";
 export default function Register() {
   const { user, loading, register } = useAuth();
   const navigate = useNavigate();
@@ -48,34 +51,55 @@ export default function Register() {
   ];
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
-      {/* Form */}
-      <div className="flex flex-col justify-center px-6 py-12 sm:px-12">
-        <div className="mx-auto w-full max-w-sm">
-          <Logo />
-          <h1 className="mt-8 text-2xl font-bold text-ink">Create your account</h1>
-          <p className="mt-1 text-sm text-slate-500">Join Rojgaar in less than a minute.</p>
+    <div className="grid h-screen w-full overflow-hidden lg:grid-cols-2 bg-white">
+      {/* Left Form Container */}
+      <div className="flex flex-col justify-center px-8 sm:px-14 lg:px-20 overflow-y-auto py-8">
+        <div className="mx-auto w-full max-w-[360px]">
+          {/* Logo with Sub-label Centered */}
+          <div className="flex flex-col items-center justify-center">
+            <Link to="/" className="inline-block">
+              <img src={logoImg} alt="Talent Hai" className="h-14 w-auto object-contain" />
+            </Link>
+            <span className="mt-1 text-xs font-medium tracking-wide text-slate-500 text-center">
+              Madhvi Corporate Consultancy
+            </span>
+          </div>
 
-          {/* Role toggle */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 text-center">
+            Create your account
+          </h1>
+          <p className="mt-1 text-xs text-slate-500 text-center">
+            Join Talent Hai in less than a minute.
+          </p>
+
+          {/* Role selection */}
+          <div className="mt-5 grid grid-cols-2 gap-2.5">
             {roles.map((r) => (
               <button
                 key={r.value}
                 type="button"
                 onClick={() => setRole(r.value)}
                 className={cn(
-                  "flex flex-col items-start rounded-xl border p-3 text-left transition",
-                  role === r.value ? "border-brand-500 bg-brand-50 ring-1 ring-brand-500" : "border-slate-200 bg-white hover:border-slate-300"
+                  "flex flex-col items-start rounded-xl border p-2.5 text-left transition-all",
+                  role === r.value
+                    ? "border-blue-600 bg-blue-50/60 ring-1 ring-blue-600"
+                    : "border-slate-200 bg-white hover:border-slate-300"
                 )}
               >
-                <r.icon className={cn("h-5 w-5", role === r.value ? "text-brand-600" : "text-slate-400")} />
-                <span className="mt-2 text-sm font-semibold text-ink">{r.title}</span>
-                <span className="text-xs text-slate-500">{r.sub}</span>
+                <r.icon
+                  className={cn(
+                    "h-4 w-4",
+                    role === r.value ? "text-blue-600" : "text-slate-400"
+                  )}
+                />
+                <span className="mt-1.5 text-xs font-semibold text-slate-900">{r.title}</span>
+                <span className="text-[10px] text-slate-500">{r.sub}</span>
               </button>
             ))}
           </div>
 
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          {/* Registration Form */}
+          <form onSubmit={onSubmit} className="mt-5 space-y-3.5">
             <Field label="Full name" htmlFor="full_name">
               <input
                 id="full_name"
@@ -84,10 +108,11 @@ export default function Register() {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="input"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-2 pl-3 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 placeholder="Priya Sharma"
               />
             </Field>
+
             <Field label="Email" htmlFor="email">
               <input
                 id="email"
@@ -96,10 +121,11 @@ export default function Register() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="input"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-2 pl-3 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 placeholder="you@example.com"
               />
             </Field>
+
             <Field label="Password" htmlFor="password" hint="At least 8 characters">
               <input
                 id="password"
@@ -109,46 +135,40 @@ export default function Register() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="input"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-2 pl-3 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                 placeholder="••••••••"
               />
             </Field>
 
             {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{error}</p>
+              <p className="rounded-lg bg-red-50 p-2 text-xs font-medium text-red-600">{error}</p>
             )}
 
-            <button type="submit" disabled={submitting} className="btn-primary w-full">
-              {submitting ? "Creating account…" : "Create account"}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full rounded-lg bg-[#0A52EF] py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.99] disabled:opacity-70 flex items-center justify-center gap-1.5"
+            >
+              {submitting ? "Creating account…" : "Create account →"}
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-slate-500">
+          <p className="mt-5 text-center text-xs text-slate-600">
             Already have an account?{" "}
-            <Link to="/login" className="link">Log in</Link>
+            <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+              Log in
+            </Link>
           </p>
         </div>
       </div>
 
-      {/* Brand panel */}
-      <div className="relative hidden overflow-hidden bg-brand-700 lg:block">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-brand-500/40 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-brand-800/60 blur-3xl" />
-        <div className="relative flex h-full flex-col justify-center px-14 text-white">
-          <h2 className="font-display text-4xl font-semibold leading-tight">
-            Your next move starts here.
-          </h2>
-          <p className="mt-4 max-w-md text-brand-100">
-            Whether you&rsquo;re looking for work or looking to hire, Rojgaar gives you the tools to move fast.
-          </p>
-          <ul className="mt-8 space-y-3 text-sm text-brand-50">
-            {["Free to create a profile", "Verified companies and candidates", "Built for the Indian job market"].map((t) => (
-              <li key={t} className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-brand-200" /> {t}
-              </li>
-            ))}
-          </ul>
-        </div>
+      {/* Right Sidebar - Full Scale Graphic Image */}
+      <div className="relative hidden h-screen w-full overflow-hidden bg-[#0A52EF] lg:block">
+        <img
+          src={registerImg}
+          alt="Talent Hai Register Sidebar"
+          className="h-full w-full object-contain object-right"
+        />
       </div>
     </div>
   );

@@ -15,4 +15,19 @@ export const config = {
     password: process.env.DB_PASSWORD || "",
     database: process.env.DB_NAME || "rojgaar",
   },
+  paymentEncryptionKey: process.env.PAYMENT_ENCRYPTION_KEY || process.env.JWT_SECRET || "dev-insecure-secret-change-me",
+  payments: {
+    activeGateway: (process.env.PAYMENT_ACTIVE_GATEWAY || "").toLowerCase().trim(),
+    razorpay: {
+      keyId: process.env.RAZORPAY_KEY_ID || "",
+      keySecret: process.env.RAZORPAY_KEY_SECRET || "",
+      webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || "",
+    },
+    cashfree: {
+      appId: process.env.CASHFREE_APP_ID || "",
+      secretKey: process.env.CASHFREE_SECRET_KEY || "",
+      webhookSecret: process.env.CASHFREE_WEBHOOK_SECRET || "",
+      env: (process.env.CASHFREE_ENV || "sandbox").toLowerCase() === "production" ? "production" : "sandbox",
+    },
+  },
 };

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Package as PackageIcon } from "lucide-react";
+import { Check, Package as PackageIcon, Clock } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { Spinner, PageHeader } from "@/components/ui";
 import { formatINR, formatDate } from "@/lib/utils";
+import { startPlanCheckout, type CreatePaymentResponse } from "@/lib/checkout";
 import type { Package } from "@/lib/types";
 
 interface PackagesResp {
@@ -65,19 +66,36 @@ export default function Packages() {
 function PackageCard({ pkg }: { pkg: Package }) {
   const qc = useQueryClient();
   const [coupon, setCoupon] = useState("");
-  const [method, setMethod] = useState("card");
-  const [invoice, setInvoice] = useState<string | null>(null);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const buy = useMutation({
-    mutationFn: () => api.post<{ ok: boolean; invoice_no: string }>("/recruiter/checkout", { kind: "package", package_id: pkg.id, coupon, method }),
-    onSuccess: (res) => {
-      setInvoice(res.invoice_no);
+    mutationFn: async () => {
+      // Step 1: Create payment via backend (determines price, gateway, etc.)
+      const created = await api.post<CreatePaymentResponse>("/payments/create", {
+        package_id: pkg.id,
+        coupon: coupon || undefined,
+      });
+
+      // Step 2: Open gateway checkout (Razorpay or Cashfree — determined by backend)
+      // Step 3: After checkout, verify payment with backend
+      const result = await startPlanCheckout(created);
+      return result;
+    },
+    onSuccess: () => {
+      setPendingApproval(true);
       setError(null);
       qc.invalidateQueries({ queryKey: ["recruiter-packages"] });
-      qc.invalidateQueries({ queryKey: ["recruiter-coins"] });
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Checkout failed."),
+    onError: (err) => {
+      const message = err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Checkout failed.";
+      // Don't show error for user-cancelled payments
+      if (message === "Payment was cancelled.") {
+        setError(null);
+      } else {
+        setError(message);
+      }
+    },
   });
 
   const features = Array.isArray(pkg.features) ? pkg.features : [];
@@ -97,16 +115,16 @@ function PackageCard({ pkg }: { pkg: Package }) {
         {features.map((f) => <li key={f} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" /> {f}</li>)}
       </ul>
 
-      {invoice ? (
-        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">Purchased! Invoice {invoice}</div>
+      {pendingApproval ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <span>Payment successful — pending admin approval.</span>
+          </div>
+        </div>
       ) : (
         <div className="mt-4 space-y-2">
           <input className="input py-2 text-xs" placeholder="Coupon code (optional)" value={coupon} onChange={(e) => setCoupon(e.target.value)} />
-          <select className="input py-2 text-xs" value={method} onChange={(e) => setMethod(e.target.value)} aria-label="Payment method">
-            <option value="card">Card</option>
-            <option value="upi">UPI</option>
-            <option value="netbanking">Net banking</option>
-          </select>
           {error && <p className="text-xs text-red-600">{error}</p>}
           <button className="btn-primary btn-sm w-full" disabled={buy.isPending} onClick={() => buy.mutate()}>
             {buy.isPending ? "Processing…" : `Buy ${pkg.name}`}

@@ -79,10 +79,12 @@ export function DashboardLayout({ role }: { role: Role }) {
       {open && <div className="fixed inset-0 z-40 bg-black/30 lg:hidden" onClick={() => setOpen(false)} />}
 
       <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0", open ? "translate-x-0" : "-translate-x-full")}>
-        <div className="flex h-16 items-center justify-between border-b border-slate-200 px-5">
-          <Logo to={`/dashboard/${role}`} />
-          <button onClick={() => setOpen(false)} className="lg:hidden" aria-label="Close menu"><X className="h-5 w-5 text-slate-400" /></button>
-        </div>
+        <Link to={`/dashboard/${role}`} className="flex flex-col items-start justify-center pl-1.5">
+          <img src="/src/pages/public/images/logo.png" alt="Talent Hai" className="h-8 w-auto object-contain" />
+          <span className="mt-0.5 text-[10px] font-medium tracking-wide text-slate-500">
+            Madhvi Corporate Consultancy
+          </span>
+        </Link>
         <div className="px-5 py-3"><span className="badge bg-slate-100 text-slate-500">{roleLabel} workspace</span></div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-6">
           {nav.map((item) => (

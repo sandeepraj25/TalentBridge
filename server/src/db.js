@@ -29,6 +29,58 @@ export async function ensureJobCategoryColumn() {
   }
 }
 
+const ORDER_PAYMENT_COLUMNS = [
+  ["gateway", "VARCHAR(20) NULL"],
+  ["gateway_order_id", "VARCHAR(120) NULL"],
+  ["gateway_payment_id", "VARCHAR(120) NULL"],
+  ["gateway_signature", "VARCHAR(512) NULL"],
+  ["currency", "VARCHAR(8) NOT NULL DEFAULT 'INR'"],
+  ["package_name", "VARCHAR(120) NULL"],
+  ["payment_status", "VARCHAR(20) NULL"],
+  ["approval_status", "VARCHAR(30) NULL"],
+  ["coins_to_assign", "INT NOT NULL DEFAULT 0"],
+  ["coins_assigned", "TINYINT(1) NOT NULL DEFAULT 0"],
+  ["approved_by", "CHAR(36) NULL"],
+  ["approved_at", "DATETIME NULL"],
+  ["rejected_by", "CHAR(36) NULL"],
+  ["rejected_at", "DATETIME NULL"],
+  ["updated_at", "DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"],
+];
+
+/** Additive payment columns on existing `orders` tables. Safe to call on every boot. */
+export async function ensurePaymentSchema() {
+  const [cols] = await pool.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders'`
+  );
+  const have = new Set(cols.map((c) => c.COLUMN_NAME));
+  if (!have.size) return;
+
+  for (const [name, ddl] of ORDER_PAYMENT_COLUMNS) {
+    if (have.has(name)) continue;
+    await pool.query(`ALTER TABLE orders ADD COLUMN ${name} ${ddl}`);
+  }
+
+  try {
+    await pool.query("ALTER TABLE orders ADD INDEX orders_gateway_order_idx (gateway_order_id)");
+  } catch {
+    /* index may already exist */
+  }
+  try {
+    await pool.query("ALTER TABLE orders ADD INDEX orders_approval_idx (approval_status, payment_status)");
+  } catch {
+    /* index may already exist */
+  }
+
+  await pool.query(
+    `UPDATE orders SET payment_status = 'PAID', approval_status = COALESCE(approval_status, 'APPROVED'), coins_assigned = 1
+     WHERE status = 'paid' AND (payment_status IS NULL OR payment_status = 'PENDING') AND gateway IS NULL`
+  );
+  await pool.query(`UPDATE orders SET payment_status = 'FAILED' WHERE status = 'failed' AND payment_status IS NULL`);
+  await pool.query(`UPDATE orders SET payment_status = 'REFUNDED' WHERE status = 'refunded' AND payment_status IS NULL`);
+  await pool.query(`UPDATE orders SET payment_status = 'PENDING' WHERE payment_status IS NULL`);
+}
+
 /** Run a query, return rows. */
 export async function query(sql, params = []) {
   const [rows] = await pool.execute(sql, params);

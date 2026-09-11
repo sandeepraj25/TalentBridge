@@ -28,23 +28,26 @@ export async function getOrCreateWallet(recruiterId) {
   return wallet;
 }
 
-/** Credit coins (purchase/bonus/package/refund). Atomic. */
-export async function creditCoins(recruiterId, amount, type, reason, reference = null) {
-  return withTransaction(async (conn) => {
-    let [[wallet]] = await conn.execute("SELECT * FROM coin_wallets WHERE recruiter_id = ? FOR UPDATE", [recruiterId]);
-    if (!wallet) {
-      const id = uuid();
-      await conn.execute("INSERT INTO coin_wallets (id, recruiter_id, balance) VALUES (?,?,0)", [id, recruiterId]);
-      wallet = { id, balance: 0 };
-    }
-    const newBalance = wallet.balance + amount;
-    await conn.execute("UPDATE coin_wallets SET balance = ? WHERE id = ?", [newBalance, wallet.id]);
-    await conn.execute(
-      "INSERT INTO coin_transactions (id, wallet_id, type, amount, balance_after, reason, reference) VALUES (?,?,?,?,?,?,?)",
-      [uuid(), wallet.id, type, amount, newBalance, reason, reference]
-    );
-    return newBalance;
-  });
+async function creditCoinsOn(conn, recruiterId, amount, type, reason, reference = null) {
+  let [[wallet]] = await conn.execute("SELECT * FROM coin_wallets WHERE recruiter_id = ? FOR UPDATE", [recruiterId]);
+  if (!wallet) {
+    const id = uuid();
+    await conn.execute("INSERT INTO coin_wallets (id, recruiter_id, balance) VALUES (?,?,0)", [id, recruiterId]);
+    wallet = { id, balance: 0 };
+  }
+  const newBalance = wallet.balance + amount;
+  await conn.execute("UPDATE coin_wallets SET balance = ? WHERE id = ?", [newBalance, wallet.id]);
+  await conn.execute(
+    "INSERT INTO coin_transactions (id, wallet_id, type, amount, balance_after, reason, reference) VALUES (?,?,?,?,?,?,?)",
+    [uuid(), wallet.id, type, amount, newBalance, reason, reference]
+  );
+  return newBalance;
+}
+
+/** Credit coins (purchase/bonus/package/refund). Atomic. Pass `conn` to join an existing transaction. */
+export async function creditCoins(recruiterId, amount, type, reason, reference = null, conn = null) {
+  if (conn) return creditCoinsOn(conn, recruiterId, amount, type, reason, reference);
+  return withTransaction((c) => creditCoinsOn(c, recruiterId, amount, type, reason, reference));
 }
 
 /** Spend coins for an action. Throws HttpError(402) if the balance is short. */
@@ -96,17 +99,21 @@ export async function unlockCandidate(recruiterId, candidateId) {
 }
 
 /** Activate a purchased package: create the subscription and grant coins. */
-export async function activatePackage(recruiterId, packageId) {
-  const pkg = await queryOne("SELECT * FROM packages WHERE id = ?", [packageId]);
-  if (!pkg) throw new HttpError(404, "Package not found");
-  const id = uuid();
-  await query(
-    `INSERT INTO recruiter_packages (id, recruiter_id, package_id, expires_at, remaining_job_posts, remaining_unlocks, status)
-     VALUES (?,?,?, DATE_ADD(NOW(), INTERVAL ? DAY), ?, ?, 'active')`,
-    [id, recruiterId, packageId, pkg.validity_days, pkg.job_posts, pkg.candidate_unlocks]
-  );
-  if (pkg.coins > 0) {
-    await creditCoins(recruiterId, pkg.coins, "package", `Package: ${pkg.name}`, id);
-  }
-  return id;
+export async function activatePackage(recruiterId, packageId, conn = null) {
+  const work = async (c) => {
+    const [[pkg]] = await c.execute("SELECT * FROM packages WHERE id = ?", [packageId]);
+    if (!pkg) throw new HttpError(404, "Package not found");
+    const id = uuid();
+    await c.execute(
+      `INSERT INTO recruiter_packages (id, recruiter_id, package_id, expires_at, remaining_job_posts, remaining_unlocks, status)
+       VALUES (?,?,?, DATE_ADD(NOW(), INTERVAL ? DAY), ?, ?, 'active')`,
+      [id, recruiterId, packageId, pkg.validity_days, pkg.job_posts, pkg.candidate_unlocks]
+    );
+    if (pkg.coins > 0) {
+      await creditCoinsOn(c, recruiterId, pkg.coins, "package", `Package: ${pkg.name}`, id);
+    }
+    return id;
+  };
+  if (conn) return work(conn);
+  return withTransaction(work);
 }

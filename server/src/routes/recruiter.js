@@ -278,10 +278,7 @@ router.post("/checkout", asyncHandler(async (req, res) => {
   let baseAmount = 0, packageId = null, coins = null;
 
   if (kind === "package") {
-    packageId = b.package_id;
-    const pkg = await queryOne("SELECT price FROM packages WHERE id = ?", [packageId]);
-    if (!pkg) throw new HttpError(404, "Package not found");
-    baseAmount = Number(pkg.price);
+    throw new HttpError(400, "Package purchases must be completed through the payment gateway.", "USE_PAYMENT_GATEWAY");
   } else {
     coins = Number(b.coins);
     baseAmount = Number(b.amount);

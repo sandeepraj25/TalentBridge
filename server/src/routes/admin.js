@@ -1,8 +1,11 @@
 import { Router } from "express";
 import { query, queryOne } from "../db.js";
-import { uuid, asyncHandler, parseJson, toList, uniqueSlug } from "../util.js";
+import { uuid, asyncHandler, parseJson, toList, uniqueSlug, HttpError } from "../util.js";
 import { authRequired, requireRole } from "../auth.js";
 import { logAudit, creditCoins } from "../services.js";
+import { getPublicAdminPaymentSettings, savePaymentGatewaySettings } from "../payments/settings.js";
+import { approvePlanPayment, rejectPlanPayment, serializeOrder } from "../payments/service.js";
+import { APPROVAL_STATUS, PAYMENT_STATUS } from "../payments/logic.js";
 
 const router = Router();
 router.use(authRequired, requireRole("admin"));
@@ -10,7 +13,7 @@ const n = (rows) => rows[0].n;
 
 // ---- Overview -------------------------------------------------------------
 router.get("/overview", asyncHandler(async (_req, res) => {
-  const [cand, rec, comp, jobs, apps, pj, pc, reports, pay] = await Promise.all([
+  const [cand, rec, comp, jobs, apps, pj, pc, pp, reports, pay] = await Promise.all([
     query("SELECT COUNT(*) AS n FROM users WHERE role='candidate'"),
     query("SELECT COUNT(*) AS n FROM users WHERE role='recruiter'"),
     query("SELECT COUNT(*) AS n FROM companies"),
@@ -18,12 +21,13 @@ router.get("/overview", asyncHandler(async (_req, res) => {
     query("SELECT COUNT(*) AS n FROM applications"),
     query("SELECT COUNT(*) AS n FROM jobs WHERE approval_status='pending'"),
     query("SELECT COUNT(*) AS n FROM companies WHERE verification_status='pending'"),
+    query("SELECT COUNT(*) AS n FROM orders WHERE kind='package' AND payment_status=? AND approval_status=?", [PAYMENT_STATUS.PAID, APPROVAL_STATUS.PENDING_APPROVAL]),
     query("SELECT COUNT(*) AS n FROM reports WHERE status='open'"),
     query("SELECT COALESCE(SUM(amount),0) AS n FROM payments WHERE status='success'"),
   ]);
   res.json({
     candidates: n(cand), recruiters: n(rec), companies: n(comp), jobs: n(jobs), applications: n(apps),
-    pending_approvals: n(pj) + n(pc), open_reports: n(reports), revenue: Number(n(pay)),
+    pending_approvals: n(pj) + n(pc) + n(pp), open_reports: n(reports), revenue: Number(n(pay)),
   });
 }));
 
@@ -85,11 +89,55 @@ router.patch("/jobs/:id/remove", asyncHandler(async (req, res) => {
 
 // ---- Approvals ------------------------------------------------------------
 router.get("/approvals", asyncHandler(async (_req, res) => {
-  const [jobs, companies] = await Promise.all([
+  const [jobs, companies, payments] = await Promise.all([
     query(`SELECT j.id, j.title, j.created_at, c.name AS company_name FROM jobs j JOIN companies c ON c.id=j.company_id WHERE j.approval_status='pending' ORDER BY j.created_at`),
     query("SELECT id, name, slug, industry, created_at FROM companies WHERE verification_status='pending' ORDER BY created_at"),
+    query(
+      `SELECT o.*, u.full_name AS recruiter_name, u.email AS recruiter_email
+       FROM orders o JOIN users u ON u.id=o.recruiter_id
+       WHERE o.kind='package' AND o.payment_status=? AND o.approval_status=?
+       ORDER BY o.created_at`,
+      [PAYMENT_STATUS.PAID, APPROVAL_STATUS.PENDING_APPROVAL]
+    ),
   ]);
-  res.json({ jobs, companies });
+  res.json({ jobs, companies, payments: payments.map(serializeOrder) });
+}));
+
+router.get("/plan-payments", asyncHandler(async (_req, res) => {
+  const rows = await query(
+    `SELECT o.*, u.full_name AS recruiter_name, u.email AS recruiter_email
+     FROM orders o JOIN users u ON u.id=o.recruiter_id
+     WHERE o.kind='package' AND o.payment_status=? AND o.approval_status=?
+     ORDER BY o.created_at`,
+    [PAYMENT_STATUS.PAID, APPROVAL_STATUS.PENDING_APPROVAL]
+  );
+  res.json({ payments: rows.map(serializeOrder) });
+}));
+
+router.post("/plan-payments/:id/approve", asyncHandler(async (req, res) => {
+  const result = await approvePlanPayment({ adminId: req.user.id, orderId: req.params.id });
+  res.json({ ok: true, ...result });
+}));
+
+router.post("/plan-payments/:id/reject", asyncHandler(async (req, res) => {
+  const result = await rejectPlanPayment({ adminId: req.user.id, orderId: req.params.id });
+  res.json({ ok: true, ...result });
+}));
+
+router.get("/payment-gateway", asyncHandler(async (_req, res) => {
+  res.json({ settings: await getPublicAdminPaymentSettings() });
+}));
+
+router.put("/payment-gateway", asyncHandler(async (req, res) => {
+  let settings;
+  try {
+    settings = await savePaymentGatewaySettings(req.body || {});
+  } catch (err) {
+    if (err?.code === "INVALID_GATEWAY") throw new HttpError(400, "Select Razorpay or Cashfree as the active gateway.");
+    throw err;
+  }
+  await logAudit(req.user.id, "payment_gateway.save", "settings", "payment_gateway", { activeGateway: settings.activeGateway });
+  res.json({ settings });
 }));
 
 // ---- Packages -------------------------------------------------------------

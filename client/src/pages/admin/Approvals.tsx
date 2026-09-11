@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Building2, Briefcase } from "lucide-react";
+import { CheckCircle2, Building2, Briefcase, CreditCard } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { PageHeader, Spinner, EmptyState } from "@/components/ui";
-import { timeAgo } from "@/lib/utils";
+import { timeAgo, formatINR } from "@/lib/utils";
 
 interface PendingJob {
   id: string;
@@ -19,11 +19,25 @@ interface PendingCompany {
   created_at: string;
 }
 
+interface PendingPayment {
+  id: string;
+  recruiter_name: string | null;
+  recruiter_email: string | null;
+  package_name: string;
+  amount: number;
+  currency: string;
+  gateway: string;
+  payment_status: string;
+  approval_status: string;
+  coins: number;
+  created_at: string;
+}
+
 export default function Approvals() {
   const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-approvals"],
-    queryFn: () => api.get<{ jobs: PendingJob[]; companies: PendingCompany[] }>("/admin/approvals"),
+    queryFn: () => api.get<{ jobs: PendingJob[]; companies: PendingCompany[]; payments: PendingPayment[] }>("/admin/approvals"),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-approvals"] });
@@ -43,11 +57,19 @@ export default function Approvals() {
     onError,
   });
 
+  const paymentApproval = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: "approve" | "reject" }) =>
+      api.post(`/admin/plan-payments/${id}/${action}`),
+    onSuccess: invalidate,
+    onError,
+  });
+
   if (isLoading) return <Spinner />;
 
   const jobs = data?.jobs ?? [];
   const companies = data?.companies ?? [];
-  const empty = jobs.length === 0 && companies.length === 0;
+  const payments = data?.payments ?? [];
+  const empty = jobs.length === 0 && companies.length === 0 && payments.length === 0;
 
   return (
     <div>
@@ -132,6 +154,58 @@ export default function Approvals() {
                         type="button"
                         onClick={() => jobApproval.mutate({ id: j.id, status: "rejected" })}
                         disabled={jobApproval.isPending}
+                        className="btn-outline btn-sm text-red-600"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-ink">
+              <CreditCard className="h-5 w-5 text-slate-400" /> Plan purchase approvals
+              <span className="text-sm font-normal text-slate-400">({payments.length})</span>
+            </h2>
+            {payments.length === 0 ? (
+              <p className="text-sm text-slate-500">No pending plan approvals.</p>
+            ) : (
+              <div className="space-y-3">
+                {payments.map((p) => (
+                  <div key={p.id} className="card flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-ink">{p.package_name}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">
+                        {p.recruiter_name || "—"}
+                        <span className="mx-1.5 text-slate-300">•</span>
+                        {p.recruiter_email || "—"}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        {formatINR(p.amount)}
+                        <span className="mx-1.5 text-slate-300">•</span>
+                        {p.coins} coins
+                        <span className="mx-1.5 text-slate-300">•</span>
+                        {p.gateway}
+                        <span className="mx-1.5 text-slate-300">•</span>
+                        {timeAgo(p.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => paymentApproval.mutate({ id: p.id, action: "approve" })}
+                        disabled={paymentApproval.isPending}
+                        className="btn-primary btn-sm"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => paymentApproval.mutate({ id: p.id, action: "reject" })}
+                        disabled={paymentApproval.isPending}
                         className="btn-outline btn-sm text-red-600"
                       >
                         Reject
