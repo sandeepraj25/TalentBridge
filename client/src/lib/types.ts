@@ -67,6 +67,7 @@ export interface Candidate {
   expected_salary: number | null;
   notice_period_days?: number | null;
   resume_url: string | null;
+  resume_file_path?: string | null;
   skills: string[];
   open_to_work: boolean;
   unlocked?: boolean;

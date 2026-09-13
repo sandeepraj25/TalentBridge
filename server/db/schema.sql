@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS candidates (
   expected_salary    BIGINT,
   notice_period_days INT,
   resume_url         VARCHAR(1024),
+  resume_file_path   VARCHAR(1024),
+  resume_original_name VARCHAR(255),
   skills             JSON,
   open_to_work       TINYINT(1) NOT NULL DEFAULT 1,
   updated_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

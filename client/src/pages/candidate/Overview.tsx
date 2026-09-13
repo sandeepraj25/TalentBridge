@@ -24,7 +24,7 @@ function profileCompletion(candidate: Candidate | null | undefined) {
     Boolean(candidate.headline),
     Boolean(candidate.about),
     Boolean(candidate.location),
-    Boolean(candidate.resume_url),
+    Boolean(candidate.resume_file_path || candidate.resume_url),
     (candidate.skills?.length ?? 0) > 0,
   ];
   const filled = checks.filter(Boolean).length;

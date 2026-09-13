@@ -2,8 +2,10 @@ import express from "express";
 import cors from "cors";
 import { ZodError } from "zod";
 import { config } from "./config.js";
-import { pool, query, ensureJobCategoryColumn, ensurePaymentSchema } from "./db.js";
+import { pool, query, ensureJobCategoryColumn, ensurePaymentSchema, ensureResumeColumns } from "./db.js";
 import { uuid, HttpError, asyncHandler } from "./util.js";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { authRequired } from "./auth.js";
 
 import authRoutes from "./routes/auth.js";
@@ -31,6 +33,10 @@ app.use(
 // Webhooks need the raw body for signature verification.
 app.use("/api/payments/webhooks", express.raw({ type: "application/json" }), paymentWebhookRouter);
 app.use(express.json({ limit: "1mb" }));
+
+// Serve uploaded resumes
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
 // Health check
 app.get("/api/health", async (_req, res) => {
@@ -84,6 +90,7 @@ app.use((err, _req, res, _next) => {
 
 ensureJobCategoryColumn()
   .then(() => ensurePaymentSchema())
+  .then(() => ensureResumeColumns())
   .catch((err) => console.warn("Could not ensure schema:", err.message))
   .finally(() => {
     app.listen(config.port, () => {

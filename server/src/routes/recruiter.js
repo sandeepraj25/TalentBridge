@@ -5,10 +5,14 @@ import { uuid, HttpError, asyncHandler, parseJson, toList, uniqueSlug, JOB_CATEG
 import { authRequired, requireRole } from "../auth.js";
 import { JOB_WITH_COMPANY, shapeJob, shapeCandidate } from "../shape.js";
 import { notify, spendCoins, unlockCandidate, activatePackage, creditCoins, getOrCreateWallet } from "../services.js";
+import { randomBytes } from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const router = Router();
 router.use(authRequired, requireRole("recruiter"));
 const me = (req) => req.user.id;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function companyIdOf(recruiterId) {
   const r = await queryOne("SELECT company_id FROM recruiters WHERE id = ?", [recruiterId]);
@@ -228,6 +232,14 @@ router.post("/candidates/:id/note", asyncHandler(async (req, res) => {
      ON DUPLICATE KEY UPDATE note=VALUES(note), tags=VALUES(tags)`,
     [uuid(), me(req), req.params.id, req.body.note || null, tags]);
   res.json({ ok: true });
+}));
+
+router.get("/candidates/:id/resume", asyncHandler(async (req, res) => {
+  const c = await queryOne("SELECT resume_file_path FROM candidates WHERE id = ?", [req.params.id]);
+  if (!c?.resume_file_path) throw new HttpError(404, "No resume uploaded");
+  const filePath = path.join(__dirname, "..", "..", c.resume_file_path);
+  const randomName = randomBytes(16).toString("hex") + ".pdf";
+  res.download(filePath, randomName);
 }));
 
 // ---- Interviews -----------------------------------------------------------

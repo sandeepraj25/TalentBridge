@@ -5,11 +5,40 @@ import { uuid, HttpError, asyncHandler, parseJson, toList } from "../util.js";
 import { authRequired, requireRole } from "../auth.js";
 import { notify } from "../services.js";
 import { JOB_WITH_COMPANY, shapeJob, shapeCandidate } from "../shape.js";
+import multer from "multer";
+import { randomBytes } from "node:crypto";
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const router = Router();
 router.use(authRequired, requireRole("candidate"));
 
 const me = (req) => req.user.id;
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadDir = path.join(__dirname, "..", "..", "uploads", "resumes");
+fs.mkdirSync(uploadDir, { recursive: true });
+
+const resumeStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadDir),
+  filename: (_req, _file, cb) => {
+    const name = randomBytes(20).toString("hex") + ".pdf";
+    cb(null, name);
+  },
+});
+
+const resumeUpload = multer({
+  storage: resumeStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext !== ".pdf" || file.mimetype !== "application/pdf") {
+      return cb(new HttpError(400, "Only PDF files are allowed"));
+    }
+    cb(null, true);
+  },
+});
 
 // ---- Profile --------------------------------------------------------------
 router.get(
@@ -64,6 +93,31 @@ router.put(
     res.json({ ok: true });
   })
 );
+
+// ---- Resume upload --------------------------------------------------------
+router.post("/resume", resumeUpload.single("resume"), asyncHandler(async (req, res) => {
+  if (!req.file) throw new HttpError(400, "A PDF resume file is required");
+  // Delete old file if exists
+  const existing = await queryOne("SELECT resume_file_path FROM candidates WHERE id = ?", [me(req)]);
+  if (existing?.resume_file_path) {
+    const oldPath = path.join(__dirname, "..", "..", existing.resume_file_path);
+    try { fs.unlinkSync(oldPath); } catch { /* file may not exist */ }
+  }
+  const filePath = "uploads/resumes/" + req.file.filename;
+  await query("UPDATE candidates SET resume_file_path = ?, resume_original_name = ? WHERE id = ?",
+    [filePath, req.file.originalname, me(req)]);
+  res.json({ ok: true, resume_file_path: filePath });
+}));
+
+router.delete("/resume", asyncHandler(async (req, res) => {
+  const existing = await queryOne("SELECT resume_file_path FROM candidates WHERE id = ?", [me(req)]);
+  if (existing?.resume_file_path) {
+    const oldPath = path.join(__dirname, "..", "..", existing.resume_file_path);
+    try { fs.unlinkSync(oldPath); } catch { /* file may not exist */ }
+  }
+  await query("UPDATE candidates SET resume_file_path = NULL, resume_original_name = NULL WHERE id = ?", [me(req)]);
+  res.json({ ok: true });
+}));
 
 // ---- Education / Experience / Projects ------------------------------------
 router.post("/education", asyncHandler(async (req, res) => {

@@ -81,6 +81,17 @@ export async function ensurePaymentSchema() {
   await pool.query(`UPDATE orders SET payment_status = 'PENDING' WHERE payment_status IS NULL`);
 }
 
+/** Ensure candidates.resume_file_path and resume_original_name exist. Safe to call on every boot. */
+export async function ensureResumeColumns() {
+  const [rows] = await pool.query(
+    `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'candidates' AND COLUMN_NAME = 'resume_file_path'`
+  );
+  if (rows.length) return;
+  await pool.query("ALTER TABLE candidates ADD COLUMN resume_file_path VARCHAR(1024) NULL");
+  await pool.query("ALTER TABLE candidates ADD COLUMN resume_original_name VARCHAR(255) NULL");
+}
+
 /** Run a query, return rows. */
 export async function query(sql, params = []) {
   const [rows] = await pool.execute(sql, params);

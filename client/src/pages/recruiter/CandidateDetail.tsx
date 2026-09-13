@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MapPin, Mail, Phone, FileText, Lock, MessageSquare, ArrowLeft } from "lucide-react";
-import { api, ApiError } from "@/lib/api";
+import { MapPin, Mail, Phone, FileText, Lock, MessageSquare, ArrowLeft, Download } from "lucide-react";
+import { api, ApiError, tokenStore } from "@/lib/api";
 import { Badge, Spinner, Field } from "@/components/ui";
 import { COIN_ACTIONS } from "@/lib/constants";
 import { initials, formatINR, formatDate } from "@/lib/utils";
@@ -19,6 +19,7 @@ interface Detail {
     expected_salary: number | null;
     skills: string[];
     resume_url: string | null;
+    resume_file_path?: string | null;
   };
   educations: any[];
   experiences: any[];
@@ -133,9 +134,34 @@ export default function CandidateDetail() {
                     <Phone className="h-4 w-4 text-slate-400" /> {data.contact.phone}
                   </a>
                 )}
+                {c.resume_file_path && (
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-slate-600 hover:text-brand-600"
+                    onClick={async () => {
+                      try {
+                        const API_BASE = import.meta.env.VITE_API_URL || "/api";
+                        const res = await fetch(`${API_BASE}/recruiter/candidates/${c.id}/resume`, {
+                          headers: { Authorization: `Bearer ${tokenStore.get()}` },
+                        });
+                        if (!res.ok) throw new Error("Download failed");
+                        const blob = await res.blob();
+                        const cd = res.headers.get("content-disposition") || "";
+                        const match = cd.match(/filename="?(.+?)"?$/);
+                        const filename = match?.[1] || "resume.pdf";
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url; a.download = filename; a.click();
+                        URL.revokeObjectURL(url);
+                      } catch { alert("Could not download resume."); }
+                    }}
+                  >
+                    <Download className="h-4 w-4 text-slate-400" /> Download résumé
+                  </button>
+                )}
                 {c.resume_url && (
                   <a href={c.resume_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-slate-600 hover:text-brand-600">
-                    <FileText className="h-4 w-4 text-slate-400" /> View résumé
+                    <FileText className="h-4 w-4 text-slate-400" /> View résumé link
                   </a>
                 )}
                 <Badge tone="green" className="mt-1">Unlocked</Badge>

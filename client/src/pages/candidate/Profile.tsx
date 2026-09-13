@@ -1,13 +1,13 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, GraduationCap, Briefcase, FolderGit2, Trash2, Plus } from "lucide-react";
+import { CheckCircle2, GraduationCap, Briefcase, FolderGit2, Trash2, Plus, Upload, FileCheck } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { PageHeader, Spinner, Field } from "@/components/ui";
 import type { Candidate } from "@/lib/types";
 
 interface ProfileData {
   profile: { full_name: string | null; phone: string | null; email: string | null };
-  candidate: Candidate;
+  candidate: Candidate & { resume_file_path?: string | null };
   educations: any[];
   experiences: any[];
   projects: any[];
@@ -140,7 +140,67 @@ export default function Profile() {
           </Field>
         </div>
 
-        <Field label="Resume URL" htmlFor="resume_url">
+        {/* ---- Resume Upload (Required) ---- */}
+        <div className="space-y-2">
+          <label className="label">Upload Resume <span className="text-red-500">*</span></label>
+          {data?.candidate?.resume_file_path ? (
+            <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <FileCheck className="h-5 w-5 text-emerald-600" />
+              <span className="text-sm font-medium text-emerald-700">Resume uploaded (PDF)</span>
+              <button
+                type="button"
+                className="btn-ghost btn-sm ml-auto text-slate-400 hover:text-red-600"
+                onClick={() => {
+                  api.del("/candidate/resume").then(() => {
+                    qc.invalidateQueries({ queryKey: ["candidate-profile"] });
+                  });
+                }}
+              >
+                <Trash2 className="h-4 w-4" /> Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-slate-300 px-4 py-6">
+              <Upload className="h-8 w-8 text-slate-400" />
+              <p className="text-sm text-slate-500">Upload your resume (PDF only, max 5MB)</p>
+              <label className="btn-primary btn-sm cursor-pointer">
+                Choose PDF
+                <input
+                  type="file"
+                  accept=".pdf,application/pdf"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                      setError("Only PDF files are allowed.");
+                      e.target.value = "";
+                      return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError("File size must be less than 5MB.");
+                      e.target.value = "";
+                      return;
+                    }
+                    setError("");
+                    const fd = new FormData();
+                    fd.append("resume", file);
+                    try {
+                      await api.upload("/candidate/resume", fd);
+                      qc.invalidateQueries({ queryKey: ["candidate-profile"] });
+                    } catch (err) {
+                      setError(err instanceof ApiError ? err.message : "Could not upload resume");
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* ---- Optional Resume Link ---- */}
+        <Field label="Or add resume link (optional)" htmlFor="resume_url">
           <input id="resume_url" type="url" className="input" placeholder="https://…" value={form.resume_url} onChange={(e) => set("resume_url", e.target.value)} />
         </Field>
 
@@ -155,22 +215,32 @@ export default function Profile() {
 
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-        <div className="flex items-center gap-3">
-          <button type="submit" className="btn-primary" disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save changes"}
-          </button>
-          {save.isSuccess && !save.isPending && (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-              <CheckCircle2 className="h-4 w-4" /> Profile saved
-            </span>
-          )}
-        </div>
+
       </form>
 
       <div className="mt-6 space-y-4">
         <EducationSection rows={data?.educations ?? []} />
         <ExperienceSection rows={data?.experiences ?? []} />
         <ProjectSection rows={data?.projects ?? []} />
+
+        {/* Save changes — saves all profile data */}
+        <div className="card p-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={save.isPending}
+              onClick={() => { if (form) save.mutate(form); }}
+            >
+              {save.isPending ? "Saving…" : "Save changes"}
+            </button>
+            {save.isSuccess && !save.isPending && (
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                <CheckCircle2 className="h-4 w-4" /> Profile saved
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
