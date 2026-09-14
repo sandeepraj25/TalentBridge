@@ -28,6 +28,14 @@ interface FormState {
   open_to_work: boolean;
 }
 
+interface EducationDraft { institution: string; degree: string; field: string; start_year: string; end_year: string; grade: string; }
+interface ExperienceDraft { company: string; title: string; location: string; start_date: string; end_date: string; is_current: boolean; description: string; }
+interface ProjectDraft { title: string; url: string; description: string; tech: string; }
+
+const emptyEducation: EducationDraft = { institution: "", degree: "", field: "", start_year: "", end_year: "", grade: "" };
+const emptyExperience: ExperienceDraft = { company: "", title: "", location: "", start_date: "", end_date: "", is_current: false, description: "" };
+const emptyProject: ProjectDraft = { title: "", url: "", description: "", tech: "" };
+
 function buildForm(data: ProfileData): FormState {
   const c = data.candidate ?? ({} as Candidate);
   const p = data.profile ?? ({} as ProfileData["profile"]);
@@ -56,6 +64,9 @@ export default function Profile() {
   });
 
   const [form, setForm] = useState<FormState | null>(null);
+  const [education, setEducation] = useState<EducationDraft>(emptyEducation);
+  const [experience, setExperience] = useState<ExperienceDraft>(emptyExperience);
+  const [project, setProject] = useState<ProjectDraft>(emptyProject);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -78,10 +89,16 @@ export default function Profile() {
         resume_url: values.resume_url,
         skills: values.skills,
         open_to_work: values.open_to_work,
+        educations: education.institution.trim() ? [{ ...education, start_year: num(education.start_year), end_year: num(education.end_year) }] : [],
+        experiences: experience.company.trim() || experience.title.trim() ? [{ ...experience, end_date: experience.is_current ? null : experience.end_date || null }] : [],
+        projects: project.title.trim() ? [project] : [],
       });
     },
     onSuccess: () => {
       setError("");
+      setEducation(emptyEducation);
+      setExperience(emptyExperience);
+      setProject(emptyProject);
       qc.invalidateQueries({ queryKey: ["candidate-profile"] });
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : "Could not save profile"),
@@ -219,9 +236,9 @@ export default function Profile() {
       </form>
 
       <div className="mt-6 space-y-4">
-        <EducationSection rows={data?.educations ?? []} />
-        <ExperienceSection rows={data?.experiences ?? []} />
-        <ProjectSection rows={data?.projects ?? []} />
+        <EducationSection rows={data?.educations ?? []} f={education} setF={setEducation} />
+        <ExperienceSection rows={data?.experiences ?? []} f={experience} setF={setExperience} />
+        <ProjectSection rows={data?.projects ?? []} f={project} setF={setProject} />
 
         {/* Save changes — saves all profile data */}
         <div className="card p-6">
@@ -294,10 +311,8 @@ function RowList({ items }: { items: { id: string; title: string; subtitle?: str
   );
 }
 
-function EducationSection({ rows }: { rows: any[] }) {
+function EducationSection({ rows, f, setF }: { rows: any[]; f: EducationDraft; setF: (value: EducationDraft) => void }) {
   const qc = useQueryClient();
-  const empty = { institution: "", degree: "", field: "", start_year: "", end_year: "", grade: "" };
-  const [f, setF] = useState(empty);
 
   const add = useMutation({
     mutationFn: () =>
@@ -310,7 +325,7 @@ function EducationSection({ rows }: { rows: any[] }) {
         grade: f.grade,
       }),
     onSuccess: () => {
-      setF(empty);
+      setF(emptyEducation);
       qc.invalidateQueries({ queryKey: ["candidate-profile"] });
     },
   });
@@ -354,10 +369,8 @@ function EducationSection({ rows }: { rows: any[] }) {
   );
 }
 
-function ExperienceSection({ rows }: { rows: any[] }) {
+function ExperienceSection({ rows, f, setF }: { rows: any[]; f: ExperienceDraft; setF: (value: ExperienceDraft) => void }) {
   const qc = useQueryClient();
-  const empty = { company: "", title: "", location: "", start_date: "", end_date: "", is_current: false, description: "" };
-  const [f, setF] = useState(empty);
 
   const add = useMutation({
     mutationFn: () =>
@@ -371,7 +384,7 @@ function ExperienceSection({ rows }: { rows: any[] }) {
         description: f.description,
       }),
     onSuccess: () => {
-      setF(empty);
+      setF(emptyExperience);
       qc.invalidateQueries({ queryKey: ["candidate-profile"] });
     },
   });
@@ -421,10 +434,8 @@ function ExperienceSection({ rows }: { rows: any[] }) {
   );
 }
 
-function ProjectSection({ rows }: { rows: any[] }) {
+function ProjectSection({ rows, f, setF }: { rows: any[]; f: ProjectDraft; setF: (value: ProjectDraft) => void }) {
   const qc = useQueryClient();
-  const empty = { title: "", url: "", description: "", tech: "" };
-  const [f, setF] = useState(empty);
 
   const add = useMutation({
     mutationFn: () =>
@@ -435,7 +446,7 @@ function ProjectSection({ rows }: { rows: any[] }) {
         tech: f.tech,
       }),
     onSuccess: () => {
-      setF(empty);
+      setF(emptyProject);
       qc.invalidateQueries({ queryKey: ["candidate-profile"] });
     },
   });

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { query, queryOne } from "../db.js";
+import { query, queryOne, withTransaction } from "../db.js";
 import { uuid, HttpError, asyncHandler, parseJson, toList } from "../util.js";
 import { authRequired, requireRole } from "../auth.js";
 import { notify } from "../services.js";
@@ -73,14 +73,28 @@ const profileSchema = z.object({
   resume_url: z.string().optional().nullable(),
   skills: z.any().optional(),
   open_to_work: z.boolean().optional(),
+  educations: z.array(z.object({
+    institution: z.string(), degree: z.string(), field: z.string().optional().nullable(),
+    start_year: z.coerce.number().int().optional().nullable(), end_year: z.coerce.number().int().optional().nullable(),
+    grade: z.string().optional().nullable(),
+  })).optional(),
+  experiences: z.array(z.object({
+    company: z.string(), title: z.string(), location: z.string().optional().nullable(),
+    start_date: z.string().optional().nullable(), end_date: z.string().optional().nullable(),
+    is_current: z.boolean().optional(), description: z.string().optional().nullable(),
+  })).optional(),
+  projects: z.array(z.object({
+    title: z.string(), url: z.string().optional().nullable(), description: z.string().optional().nullable(), tech: z.any().optional(),
+  })).optional(),
 });
 
 router.put(
   "/profile",
   asyncHandler(async (req, res) => {
     const d = profileSchema.parse(req.body);
-    await query("UPDATE users SET full_name = ?, phone = ? WHERE id = ?", [d.full_name, d.phone || null, me(req)]);
-    await query(
+    await withTransaction(async (conn) => {
+      await conn.execute("UPDATE users SET full_name = ?, phone = ? WHERE id = ?", [d.full_name, d.phone || null, me(req)]);
+      await conn.execute(
       `UPDATE candidates SET headline=?, about=?, location=?, experience_years=?, current_salary=?,
         expected_salary=?, notice_period_days=?, resume_url=?, skills=?, open_to_work=? WHERE id = ?`,
       [
@@ -89,7 +103,20 @@ router.put(
         d.notice_period_days ?? null, d.resume_url || null, JSON.stringify(toList(d.skills)),
         d.open_to_work ? 1 : 0, me(req),
       ]
-    );
+      );
+      for (const education of d.educations ?? []) {
+        await conn.execute("INSERT INTO educations (id, candidate_id, institution, degree, field, start_year, end_year, grade) VALUES (?,?,?,?,?,?,?,?)",
+          [uuid(), me(req), education.institution, education.degree, education.field || null, education.start_year ?? null, education.end_year ?? null, education.grade || null]);
+      }
+      for (const experience of d.experiences ?? []) {
+        await conn.execute("INSERT INTO experiences (id, candidate_id, company, title, location, start_date, end_date, is_current, description) VALUES (?,?,?,?,?,?,?,?,?)",
+          [uuid(), me(req), experience.company, experience.title, experience.location || null, experience.start_date || null, experience.end_date || null, experience.is_current ? 1 : 0, experience.description || null]);
+      }
+      for (const project of d.projects ?? []) {
+        await conn.execute("INSERT INTO projects (id, candidate_id, title, url, description, tech) VALUES (?,?,?,?,?,?)",
+          [uuid(), me(req), project.title, project.url || null, project.description || null, JSON.stringify(toList(project.tech))]);
+      }
+    });
     res.json({ ok: true });
   })
 );
