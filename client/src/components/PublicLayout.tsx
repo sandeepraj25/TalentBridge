@@ -158,7 +158,7 @@ export function PublicLayout() {
             <div>
               <h4 className="text-sm font-bold text-slate-900">Company</h4>
               <ul className="mt-4 flex flex-col gap-2.5 text-sm text-slate-600">
-                <li><Link to="/about" className="hover:text-brand-600">Know Us</Link></li>
+                <li><Link to="/about" className="hover:text-brand-600">Goli Us</Link></li>
                 <li><Link to="/contact" className="hover:text-brand-600">Contact</Link></li>
                 <li><Link to="/refund-policy" className="hover:text-brand-600">Refund Policy</Link></li>
                 <li><Link to="/privacy" className="hover:text-brand-600">Privacy Policy</Link></li>
