@@ -289,6 +289,10 @@ async function main() {
   // ============================================================
 
   console.log("Seeding demo users…");
+  await query(
+    "UPDATE users SET email = ? WHERE email = ? AND role = 'admin'",
+    ["admin@talenthain.com", "admin@rojgaar.example"]
+  );
 
   const adminId = await upsertUser(
     "admin@talenthain.com",
