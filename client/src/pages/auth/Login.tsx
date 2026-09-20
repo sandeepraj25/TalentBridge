@@ -29,11 +29,16 @@ export default function Login() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
+
     try {
       const u = await login(email, password);
       navigate(next || `/dashboard/${u.role}`, { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -47,26 +52,41 @@ export default function Login() {
         <div className="mx-auto w-full max-w-[354px]">
           <div className="flex flex-col items-center justify-center">
             <Link to="/" className="inline-block">
-              <img src={logoImg} alt="Talent Hai" className="h-14 w-auto object-contain" />
+              <img
+                src={logoImg}
+                alt="Talent Hai"
+                className="h-14 w-auto object-contain"
+              />
             </Link>
+
             <span className="mt-1 text-xs font-medium tracking-wide text-slate-500 text-center">
               Madhvi Corporate Consultancy
             </span>
           </div>
 
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 text-center">Welcome back</h1>
-          <p className="mt-1 text-xs text-slate-500 text-center">Log in to your Talent Hai account.</p>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900 text-center">
+            Welcome back
+          </h1>
+
+          <p className="mt-1 text-xs text-slate-500 text-center">
+            Log in to your Talent Hai account.
+          </p>
 
           <form onSubmit={onSubmit} className="mt-6 space-y-4">
             {/* Compact Inputs */}
             <div>
-              <label htmlFor="email" className="block text-xs font-semibold text-slate-700 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-xs font-semibold text-slate-700 mb-1"
+              >
                 Email
               </label>
+
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Mail className="h-4 w-4" />
                 </div>
+
                 <input
                   id="email"
                   type="email"
@@ -81,13 +101,18 @@ export default function Login() {
 
             {/* Compact Password */}
             <div>
-              <label htmlFor="password" className="block text-xs font-semibold text-slate-700 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-xs font-semibold text-slate-700 mb-1"
+              >
                 Password
               </label>
+
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                   <Lock className="h-4 w-4" />
                 </div>
+
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -97,15 +122,30 @@ export default function Login() {
                   className="w-full rounded-lg border border-slate-200 bg-slate-50/50 py-2.5 pl-9 pr-9 text-xs text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-600"
                   placeholder="••••••••"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
+
+            {/* Login Error Warning */}
+            {error && (
+              <div
+                role="alert"
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-600"
+              >
+                ❌ {error}
+              </div>
+            )}
 
             {/* Compact Button */}
             <button
