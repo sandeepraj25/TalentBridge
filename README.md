@@ -10,7 +10,7 @@ coin-powered suite; admins run the whole platform.
 - **Database:** **MySQL** (Hostinger-friendly)
 - **Auth:** JWT (bcrypt password hashing)
 - **Frontend:** **React** (Vite) SPA + React Router + TanStack Query + Tailwind CSS
-- **Deploy target:** Hostinger (static SPA + MySQL on shared hosting, Node API on a VPS) — see [DEPLOY.md](./DEPLOY.md)
+- **Deploy target:** Hostinger (static SPA + MySQL on shared hosting, Node API on a VPS) — see [DEPLOY.md](./DEPLOY.md) 
 
 ```
 job-portal/

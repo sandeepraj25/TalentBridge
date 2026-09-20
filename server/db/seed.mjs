@@ -291,7 +291,7 @@ async function main() {
   console.log("Seeding demo users…");
 
   const adminId = await upsertUser(
-    "admin@rojgaar.example",
+    "admin@talenthain.com",
     "Password123!",
     "admin",
     "Aditi Admin"
