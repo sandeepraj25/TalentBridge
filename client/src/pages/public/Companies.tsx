@@ -18,7 +18,7 @@ export default function Companies() {
   return (
     <div className="container-page py-10">
       <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold text-ink">Companies hiring on Rojgaar</h1>
+        <h1 className="text-3xl font-bold text-ink">Companies hiring on Talent Hain</h1>
         <p className="mt-2 text-slate-500">Discover teams across India and the roles they&rsquo;re looking to fill.</p>
       </div>
 
