@@ -69,7 +69,11 @@ export function App() {
         <Route path="/companies" element={<Companies />} />
         <Route path="/companies/:slug" element={<CompanyDetail />} />
         <Route path="/pricing" element={<Pricing />} />
+
+        {/* Public Content Pages */}
         <Route path="/about" element={<Content pageKey="about" />} />
+        <Route path="/contact" element={<Content pageKey="contact" />} />
+        <Route path="/refund-policy" element={<Content pageKey="refund-policy" />} />
         <Route path="/terms" element={<Content pageKey="terms" />} />
         <Route path="/privacy" element={<Content pageKey="privacy" />} />
       </Route>
@@ -137,7 +141,10 @@ export function App() {
 
 function DashboardRedirect() {
   const { user, loading } = useAuth();
+
   if (loading) return null;
+
   if (!user) return <Navigate to="/login" replace />;
+
   return <Navigate to={`/dashboard/${user.role}`} replace />;
 }
