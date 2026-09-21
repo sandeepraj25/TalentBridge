@@ -198,6 +198,28 @@ export function PublicLayout() {
             </div>
 
           </div>
+
+          {/* Copyright - Full Footer Center */}
+          <div className="mt-8 border-t border-slate-200 pt-5 text-center">
+            <p className="text-xs font-medium text-slate-600">
+              © 2026 Talent Hai. All rights reserved.
+            </p>
+
+            <p className="mt-1 font-display text-sm italic font-medium text-slate-500">
+              Developed by{" "}
+              <span className="text-slate-700">Sandeep</span>
+              {" · "}
+              <a
+                href="https://skillforever.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-700 transition-colors hover:text-slate-900"
+              >
+                SkillForever
+              </a>
+            </p>
+          </div>
+
         </div>
       </footer>
     </div>
