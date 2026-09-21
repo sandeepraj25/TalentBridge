@@ -240,7 +240,7 @@ function ApplyPanel({ job, user }: { job: Job; user: ReturnType<typeof useAuth>[
       ) : (
         <>
           <h3 className="text-sm font-semibold text-ink">Interested in this role?</h3>
-          <p className="mt-1 text-xs text-slate-500">Apply in one click with your Rojgaar profile.</p>
+          <p className="mt-1 text-xs text-slate-500">Apply in one click with your Talent Hai profile.</p>
 
           {!showForm ? (
             <button onClick={() => setShowForm(true)} className="btn-primary mt-4 w-full">

@@ -57,7 +57,7 @@ export default function Overview() {
 
   return (
     <div>
-      <PageHeader title="Admin overview" description="A snapshot of everything happening across Rojgaar." />
+      <PageHeader title="Admin overview" description="A snapshot of everything happening across Talent Hai." />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Candidates" value={o.candidates} icon={Users} tone="brand" />

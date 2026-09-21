@@ -111,7 +111,7 @@ export function Logo({ className, to = "/" }: { className?: string; to?: string 
           <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
         </svg>
       </span>
-      <span>Rojgaar<span className="text-brand-600">.</span></span>
+      <span>Talent Hai</span>
     </Link>
   );
 }

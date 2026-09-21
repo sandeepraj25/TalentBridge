@@ -20,7 +20,7 @@ export default function Suspended() {
       </div>
       <h1 className="mt-6 text-2xl font-bold text-ink">Your account is suspended</h1>
       <p className="mt-2 max-w-md text-sm text-slate-500">
-        Access to your Rojgaar account has been temporarily suspended. If you think this is a mistake,
+      Access to your Talent Hai account has been temporarily suspended. If you think this is a mistake,
         please contact support.
       </p>
       <div className="mt-8 flex items-center gap-3">
