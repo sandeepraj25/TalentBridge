@@ -21,13 +21,9 @@ const app = express();
 
 app.use(
   cors({
-    origin(origin, cb) {
-      // allow same-origin / server-to-server (no origin) and whitelisted origins
-      if (!origin || config.clientOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
-    },
+    origin: config.clientOrigins,
     credentials: true,
-  })
+  }),
 );
 
 // Webhooks need the raw body for signature verification.
