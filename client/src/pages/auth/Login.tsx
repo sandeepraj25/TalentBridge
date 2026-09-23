@@ -155,6 +155,16 @@ export default function Login() {
             >
               {submitting ? "Logging in…" : "Log in →"}
             </button>
+            {/* Create Account Link */}
+            <div className="mt-4 text-center text-xs text-slate-500">
+              If you don't have an account?{" "}
+              <Link
+                to="/register"
+                className="font-semibold text-[#0A52EF] hover:underline"
+              >
+                Create here
+              </Link>
+            </div>
           </form>
         </div>
       </div>
